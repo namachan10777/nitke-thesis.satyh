@@ -1,0 +1,219 @@
+@require: pervasives
+@require: math
+@require: gr
+@require: color
+
+type report = (|
+  year  : int;
+  month : int;
+  body  : block-text;
+  overview : inline-text;
+|)
+
+module NITKEReport : sig
+  val document : 'a -> report list -> document
+    constraint 'a :: (|
+      number : inline-text;
+      author : inline-text;
+    |)
+
+  val font-latin-roman : string * float * float
+  val font-cjk-mincho  : string * float * float
+
+  direct +p-ja : [inline-text] block-cmd
+end = struct
+
+  let font-ratio-latin = 1.0
+  let font-ratio-cjk   = 0.88
+  let font-latin-roman = (`Junicode`, font-ratio-latin, 0.)
+  let font-cjk-mincho  = (`ipaexg`,   font-ratio-cjk  , 0.)
+  let font-size-body = 12pt
+
+  let get-standard-context wid =
+    get-initial-context wid (command \math)
+      |> set-dominant-wide-script Kana
+      |> set-language Kana Japanese
+      |> set-language HanIdeographic Japanese
+      |> set-dominant-narrow-script Latin
+      |> set-language Latin English
+      |> set-font Kana           font-cjk-mincho
+      |> set-font HanIdeographic font-cjk-mincho
+      |> set-font Latin          font-latin-roman
+      |> set-font-size font-size-body
+      |> set-math-font `lmodern`
+      |> set-hyphen-penalty 1000
+      |> set-space-ratio 0.275 0.08 0.12
+
+  let-rec insert-by-3 sep l = match l with
+    | a :: b :: c :: last ->
+      a :: b :: c :: sep :: insert-by-3 sep last
+    | other -> other
+
+  let bb-of-report record ctx report =
+    let padding      = record#padding in
+    let body-wid     = record#body-wid -' padding *' 2. in
+    let heading-wid  = record#heading-wid in
+    let date-hgt     = record#date-hgt in
+    let overview-hgt = record#overview-hgt in
+    let body-hgt    = record#body-hgt in
+    let it-year  = embed-string (arabic report#year)  in
+    let it-month = embed-string (arabic report#month) in
+    let it-date = {#it-year;年#it-month;月} in
+    let ib-date =
+      let ib-date = read-inline ctx it-date in
+      let (wid-date, _, _) = get-natural-metrics ib-date in
+      inline-skip 5pt ++ ib-date ++ inline-fil
+    in
+    let ib-overview = inline-skip 5pt ++ read-inline ctx report#overview ++ inline-fil in
+    let ib-body = embed-block-top ctx body-wid (fun ctx -> read-block ctx report#body) in
+    let ib-heading-of-it it =
+      embed-block-top ctx heading-wid (fun ctx -> (
+        line-break false false ctx (
+          read-inline ctx it
+        )
+      ))
+    in
+    let pads-for-aligncetre targetwid targethgt ib =
+      let (w, _, h) = get-natural-metrics ib in
+      let padding-y = (targethgt -' h) *' 0.5 in
+      let padding-x = (targetwid -' w) *' 0.5 in
+      (padding-x, padding-x, padding-y, padding-y)
+    in
+    let pads-for-alignlefttop targetwid targethgt ib =
+      let (w, _, h) = get-natural-metrics ib in
+      let padding-y = (targethgt -' h) -' padding in
+      (padding, padding, padding, padding-y)
+    in
+    let default-padding = (padding, padding, padding, padding) in
+    let ib-of-heading its =
+      let gathered = its
+      |> List.map (fun it -> inline-fil ++ read-inline ctx it ++ inline-fil)
+      |> line-stack-top
+      in
+      inline-fil ++ gathered ++ inline-fil
+    in
+    let ib-heading-date     = ib-of-heading {|日時|} in
+    let ib-heading-overview = ib-of-heading {|概要|} in
+    let ib-heading-body     = ib-of-heading {|詳細|} in
+    let ib-table = tabular [
+      [
+        NormalCell(pads-for-aligncetre heading-wid date-hgt ib-heading-date, ib-heading-date);
+        NormalCell(default-padding, ib-date);
+      ];
+      [
+        NormalCell(pads-for-aligncetre heading-wid overview-hgt ib-heading-overview, ib-heading-overview);
+        NormalCell(default-padding, ib-overview);
+      ];
+      [
+        NormalCell(pads-for-alignlefttop heading-wid body-hgt ib-heading-body, ib-heading-body);
+        NormalCell(pads-for-alignlefttop body-wid body-hgt ib-body, ib-body);
+      ];
+    ]
+    (fun xs ys -> (match (xs, ys) with
+    | ((x0 :: x1 :: xlast :: []), (y0 :: y1 :: y2 :: ylast :: [])) -> (
+      let line p1 p2 = stroke 0.5pt Color.black (Gr.line p1 p2) in
+      let vlines = List.map (fun x -> line (x, y0) (x, ylast)) xs in
+      let hlines = List.map (fun y -> line (x0, y) (xlast, y)) ys in
+      List.concat [vlines; hlines])
+    | _ -> []))
+    in
+    line-break true true ctx ib-table
+ 
+  let document record reports =
+    % programmable
+    let pagewid = 600pt in
+    let pagehgt = 840pt in
+    let txtmgnx = 60pt in
+    let txtmgny = 100pt in
+    let content-per-page = 3 in
+    let content-mgn = 30pt in
+    let content-heading-hgt = 20pt in
+    let content-heading-wid = 40pt in
+    let doublepage-shift-wid = 20pt in
+    let hdrmgny = 40pt in
+    % calcurated
+    let page = A4Paper in
+    let txtwid  = (pagewid -' txtmgnx *' 2.) in
+    let txthgt  = (pagehgt -' txtmgny *' 2.) in
+    let content-hgt = 170pt
+    in
+    let content-body-hgt = content-hgt -' content-heading-hgt *' 2. in
+    let content-body-wid = txtwid -' content-heading-wid in
+    let ctx = get-standard-context txtwid in
+    let pagecontf pbinfo =
+      let txtmgnx =
+        if pbinfo#page-number mod 2 == 0
+        then txtmgnx -' doublepage-shift-wid
+        else txtmgnx +' doublepage-shift-wid
+      in
+        (|
+          text-origin = (txtmgnx, txtmgny);
+          text-height = txthgt;
+        |)
+    in
+    let it-author = record#author in
+    let it-number = record#number in
+    let pagepartsf pbinfo =
+      let ib-heading =
+        read-inline ctx {卒業研究実施報告書}
+        ++ inline-fil
+      in
+      let ib-reporter =
+        inline-fil
+        ++ read-inline ctx {5EC\ #it-number;番\ #it-author;}
+      in
+      let ctx = ctx
+        |> set-paragraph-margin 0pt 0pt
+      in
+      let bb-header =
+        line-break false false ctx ib-heading
+        +++ line-break false false ctx ib-reporter
+      in
+      let hdrmgnx =
+        if pbinfo#page-number mod 2 == 0
+        then txtmgnx -' doublepage-shift-wid
+        else txtmgnx +' doublepage-shift-wid
+      in
+      let bb-footer =
+        let it-page = embed-string (arabic pbinfo#page-number) in
+        line-break false false ctx (
+          if pbinfo#page-number mod 2 == 0
+          then
+            inline-skip 30pt ++ read-inline ctx it-page ++ inline-fil
+          else
+            inline-fil ++ read-inline ctx it-page ++ inline-skip 30pt
+        )
+      in
+      (|
+        header-origin  = (hdrmgnx, 40pt);
+        header-content = bb-header;
+        footer-origin  = (hdrmgnx, pagehgt -' 70pt);
+        footer-content = bb-footer;
+      |)
+    in
+    let cfg = (|
+      body-wid = content-body-wid;
+      heading-wid = content-heading-wid;
+      date-hgt = content-heading-hgt;
+      overview-hgt = content-heading-hgt;
+      body-hgt = content-body-hgt;
+      padding = 4pt;
+    |)
+    in
+    let bb-contents =
+      reports
+      |> List.map (bb-of-report cfg ctx)
+      |> insert-by-3 clear-page
+      |> List.fold-left (+++) block-nil
+    in
+      page-break page pagecontf pagepartsf bb-contents
+
+  let-block ctx +p-ja inner =
+    let ctx = ctx
+      |> set-paragraph-margin 4pt 0pt
+      |> set-font-size font-size-body
+    in
+    let len = get-font-size ctx *' font-ratio-cjk in
+    let ib-inner = inline-skip len ++ read-inline ctx inner ++ inline-fil in
+      form-paragraph ctx ib-inner
+end

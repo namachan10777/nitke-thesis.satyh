@@ -1,0 +1,20 @@
+@import: nitke-report
+@require: itemize
+
+NITKEReport.document
+  (|
+    author = {中野将生};
+    number = {28};
+  |)
+  [
+  (|
+    year = 2019;
+    month = 5;
+    overview = {5月病になる};
+    body = '<
+      +p-ja{
+        毎回この時期は憂鬱
+      }
+    >;
+  |);
+]
