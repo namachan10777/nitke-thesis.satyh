@@ -1,0 +1,3 @@
+[submodule "stable/bibyfi"]
+	path = stable/bibyfi
+	url = https://github.com/namachan10777/bibyfi

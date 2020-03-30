@@ -1,0 +1,82 @@
+% -*- coding: utf-8 -*-
+@import: nitke-thesis
+
+let abstract-en = '<
+  +p{
+    This example code descibes how to write a thesis by \SATySFi;.
+  }
+>
+in
+
+let abstract-ja = '<
+  +p-ja{
+    \SATySFi;によってどう卒論を書くかを示す．
+  }
+>
+in
+
+let acknowledgements = '<
+  +p-ja{
+    まず\SATySFi;及びcs-thesisの作者である諏訪敬之氏にまず感謝を述べさせていただきます。
+  }
+  +p-ja{
+    monaqa（https://github.com/monaqa）からは本テンプレートを作成するにあたり、
+    式番号を振る処理を始め様々な部分で助力頂きました。本当にありがとうございました。
+  }
+  +p-ja{
+    最後になりますが、本テンプレートの前身となる私の卒論作成にあたり、
+    熱心かつ丁寧な指導頂いた香川高専の北村大地先生に心より感謝いたします。本当にありがとうございました。
+  }
+>
+in
+
+let bibliography = [
+  (`cs-thesis`, WildCard({
+    https://github.com/gfngfn/cs-thesis.git
+  }));
+]
+in
+
+let publications-ja = [
+]
+in
+
+let symbol-table = [
+]
+in
+
+document (|
+  title-en = {The example for NITKEThesis.};
+  title-ja = {NITKEThesisの仕様例};
+  author-en = {Masaki Nakano};
+  author-ja = {中野 将生};
+  supervisor = {主査 太郎 助教授};
+  subsupervisor = {副査 次郎 准教授};
+  date = {令和x年 y月 z日};
+  abstract-en = abstract-en;
+  abstract-ja = abstract-ja;
+  split-abstract = false;
+  dean = {学科 長子 教授};
+  keywords = {|SATySFi|thesis|};
+  bibliography = bibliography;
+  publications-ja = publications-ja;
+  symbol-table = symbol-table;
+  acknowledgements = acknowledgements;
+|) '<
+  +chapter?:(`intro`){緒言}<
+    +p-ja{
+      \SATySFi;で卒論，書きたいですよね．
+    }
+  >
+  +chapter?:(`conventional`){従来手法}<
+    +p-ja{
+      gfngfn氏のcs-thesis\cite[`cs-thesis`];がある．
+    }
+  >
+  +chapter?:(`conclusion`){結言}<
+    +p-ja{
+      本クラスファイルはcs-thesisを拡張することにより，
+      論文作成にかかる作業の一部を自動化することに成功した．
+    }
+  >
+>
