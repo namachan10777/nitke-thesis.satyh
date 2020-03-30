@@ -1,0 +1,24 @@
+@import: nitke-slide
+@import: slydifi/src/slydifi
+@require: math
+@require: table
+
+let bibliography = [
+]
+in
+
+NITKESlide.document(|
+  draft-mode = false;
+  bibliography = bibliography;
+|) '<
+  +make-title (|
+    title = {|スライド|};
+    author = {|中野将生|};
+    date = {|2020/2/3|};
+  |);
+  +frame{ページサンプル}<
+    +p{
+      詳しくは\SLyDIFi;を
+    }
+  >
+>

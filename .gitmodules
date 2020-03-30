@@ -1,3 +1,6 @@
 [submodule "stable/bibyfi"]
 	path = stable/bibyfi
 	url = https://github.com/namachan10777/bibyfi
+[submodule "stable/slydifi"]
+	path = stable/slydifi
+	url = https://github.com/monaqa/slydifi
