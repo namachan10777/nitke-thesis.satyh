@@ -1,6 +1,6 @@
-[submodule "stable/bibyfi"]
-	path = stable/bibyfi
+[submodule "available/bibyfi"]
+	path = available/bibyfi
 	url = https://github.com/namachan10777/bibyfi
-[submodule "stable/slydifi"]
-	path = stable/slydifi
+[submodule "available/slydifi"]
+	path = available/slydifi
 	url = https://github.com/monaqa/slydifi
